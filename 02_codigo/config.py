@@ -281,3 +281,122 @@ NOTA_LIKERT = (
     "Nota. Escala: 1 = Nunca / Totalmente en desacuerdo, "
     "5 = Siempre / Totalmente de acuerdo."
 )
+
+# =============================================================================
+# 9. ETIQUETAS EN INGLÉS (para figuras y tablas bilingües)
+# =============================================================================
+
+NOMBRES_INDICES_EN = {
+    "IDX_EA": "Academic Stress",
+    "IDX_FA": "Fatigue / Burnout",
+    "IDX_MV": "Motivation",
+    "IDX_EQ": "Perceived Equity",
+    "IDX_BP": "Perceived Well-being",
+}
+
+NOMBRES_INDICES_CORTOS_EN = {
+    "IDX_EA": "Stress",
+    "IDX_FA": "Fatigue",
+    "IDX_MV": "Motivation",
+    "IDX_EQ": "Equity",
+    "IDX_BP": "Well-being",
+}
+
+COLORES_INDICES_EN = COLORES_INDICES  # misma paleta, distinto nombre por claridad
+
+CARRERAS_CORTAS_EN = CARRERAS_CORTAS  # las siglas son iguales en ambos idiomas
+
+COLORES_GENERO_EN = {
+    "Woman":              "#D96B9A",
+    "Man":                "#5B8DB8",
+    "Non-binary":         "#6FBFA0",
+    "Prefer not to say":  "#AAAAAA",
+}
+
+GENERO_ES_EN = {
+    "Mujer":                  "Woman",
+    "Hombre":                 "Man",
+    "No binario":             "Non-binary",
+    "Prefiero no responder":  "Prefer not to say",
+}
+
+SEMESTRE_ES_EN = {
+    "Segundo Semestre": "2nd Semester",
+    "Cuarto Semestre":  "4th Semester",
+    "Sexto Semestre":   "6th Semester",
+    "Octavo Semestre":  "8th Semester",
+}
+
+ORIGEN_ES_EN = {
+    "Pueblo, comisaría o localidad rural (menos de 10,000 habitantes)":
+        "Rural town (< 10,000 inh.)",
+    "Cabecera municipal pequeña o ciudad intermedia (10,000 a 50,000 habitantes)":
+        "Small city (10k–50k inh.)",
+    "Ciudad o cabecera municipal grande (más de 50,000 habitantes)":
+        "Large city (> 50,000 inh.)",
+    "Comunidad indígena o rural muy pequeña (menos de 2,500 habitantes)":
+        "Indigenous / very rural (< 2,500 inh.)",
+}
+
+DESEMPENO_ES_EN = {
+    "Muy bueno (promedio alto, pocas dificultades)":             "Very good",
+    "Bueno (promedio regular, algunas dificultades)":            "Good",
+    "Regular (promedio medio, varias dificultades)":             "Average",
+    "Bajo (dificultades frecuentes, riesgo de reprobación)":     "Low",
+    "No lo sé / No tengo una idea clara":                        "Not sure",
+}
+
+# Encabezados bilingües para tablas (ES | EN)
+# Formato: clave → (español, inglés)
+HEADERS_BILINGUE = {
+    "n":             ("n",                   "n"),
+    "pct":           ("%",                   "%"),
+    "media":         ("Media",               "Mean"),
+    "de":            ("DE",                  "SD"),
+    "min":           ("Mín.",                "Min."),
+    "max":           ("Máx.",                "Max."),
+    "asimetria":     ("Asimetría",           "Skewness"),
+    "curtosis":      ("Curtosis",            "Kurtosis"),
+    "alpha":         ("α de Cronbach",       "Cronbach's α"),
+    "omega":         ("ω de McDonald",       "McDonald's ω"),
+    "r_it":          ("r ítem-total",        "Item-total r"),
+    "lambda":        ("λ (estand.)",         "λ (std.)"),
+    "error_std":     ("Error estándar",      "Std. Error"),
+    "valor_z":       ("z",                   "z"),
+    "p_valor":       ("p",                   "p"),
+    "r_pearson":     ("r de Pearson",        "Pearson's r"),
+    "d_cohen":       ("d de Cohen",          "Cohen's d"),
+    "beta_std":      ("β estand.",           "Std. β"),
+    "r2":            ("R²",                  "R²"),
+    "r2_adj":        ("R² ajust.",           "Adj. R²"),
+    "ic_95":         ("IC 95%",              "95% CI"),
+    "cfi":           ("CFI",                 "CFI"),
+    "tli":           ("TLI",                 "TLI"),
+    "rmsea":         ("RMSEA",               "RMSEA"),
+    "srmr":          ("SRMR",                "SRMR"),
+    "chi2":          ("χ²",                  "χ²"),
+    "gl":            ("gl",                  "df"),
+    "ave":           ("VME",                 "AVE"),
+    "cr":            ("FC",                  "CR"),
+    "carrera":       ("Carrera",             "Program"),
+    "semestre":      ("Semestre",            "Semester"),
+    "genero":        ("Género",              "Gender"),
+    "origen":        ("Lugar de origen",     "Place of origin"),
+    "edad":          ("Edad",                "Age"),
+    "indice":        ("Índice",              "Index"),
+    "constructo":    ("Constructo",          "Construct"),
+    "item":          ("Ítem",                "Item"),
+    "variable":      ("Variable",            "Variable"),
+    "categoria":     ("Categoría",           "Category"),
+    "frecuencia":    ("Frecuencia",          "Frequency"),
+}
+
+# Notas al pie para figuras en inglés
+NOTA_MUESTRA_EN = (
+    "Note. n = 555 students from ITESCAM, Campeche, México (2026)."
+)
+NOTA_SIG_EN = "***p < .001, **p < .01, *p < .05."
+NOTA_LIKERT_EN = (
+    "Note. Scale: 1 = Never / Strongly disagree, "
+    "5 = Always / Strongly agree."
+)
