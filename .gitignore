@@ -1,0 +1,45 @@
+# ─── Datos (no subir a GitHub) ───────────────────────────────────────────────
+01_datos/*.xlsx
+01_datos/*.csv
+01_datos/*.pkl
+01_datos/*.xls
+
+# ─── Salidas generadas (se regeneran con el pipeline) ────────────────────────
+03_salidas/tablas/*.txt
+03_salidas/modelos/*.txt
+03_salidas/modelos/*.pkl
+03_salidas/figuras_pub/*.png
+03_salidas/figuras_pub/*.pdf
+03_salidas/figuras_exp/*.png
+
+# ─── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ─── Entornos virtuales ───────────────────────────────────────────────────────
+env/
+venv/
+.venv/
+.env
+
+# ─── Jupyter (si se usa) ──────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ─── Sistema operativo ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── IDEs ─────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
