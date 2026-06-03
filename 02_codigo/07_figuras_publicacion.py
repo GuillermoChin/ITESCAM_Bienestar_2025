@@ -174,10 +174,24 @@ for n1, n2 in corr_pairs_fig:
     i1 = idx_esc_map[n1]; i2 = idx_esc_map[n2]
     r, p = stats.pearsonr(df[i1].dropna(), df[i2][df[i1].notna()])
     corr_vals[(n1, n2)] = (r, p)
+    
+# ── Distribución de respuestas para los anillos (Donut charts)
+dist_data = {}
+for esc_name, (cols, suf, mapa, color) in escalas.items():
+    cols_ok = [c + suf for c in cols if c + suf in df.columns]
+    if cols_ok:
+        vals = df[cols_ok].dropna().values.flatten()
+        n_total = len(vals)
+        # Clasificación basada en tu Fig05: 1-2 (Negativo), 3 (Neutral), 4-5 (Positivo)
+        p_neg = (vals <= 2).sum() / n_total
+        p_neu = (vals == 3).sum() / n_total
+        p_pos = (vals >= 4).sum() / n_total
+        dist_data[esc_name] = [p_pos, p_neu, p_neg]
 
-# ── Layout figure
-fig, ax = plt.subplots(figsize=(24, 15))
-ax.set_xlim(0, 24); ax.set_ylim(0, 15)
+# ── Layout figure (ajustado para eliminar espacio en blanco)
+fig, ax = plt.subplots(figsize=(19, 13))
+# Recortamos los ejes X y Y para que el diagrama ocupe toda la imagen
+ax.set_xlim(0, 19); ax.set_ylim(0.5, 13.5)
 ax.axis("off"); ax.set_facecolor("white")
 
 # Posiciones de nodos
@@ -215,7 +229,14 @@ for n1, n2 in corr_pairs_fig:
     c_edge  = "#C0392B" if r > 0 else "#2980B9"
     alpha_e = 0.15 + abs(r) * 0.65
     lw_e    = 0.8 + abs(r) * 5.5
-    rad     = 0.25 if (n1 != "Stress (EA)" or n2 != "Fatigue (FA)") else -0.35
+    
+    # Ajuste de radios específico para evitar que choquen con los nodos
+    if n1 == "Stress (EA)" and n2 == "Fatigue (FA)":
+        rad = -0.35
+    elif n1 == "Stress (EA)" and n2 == "Equity (EQ)":
+        rad = 0.45 # Curva amplia hacia la derecha para rodear a Fatigue (soluciona el 16***)
+    else:
+        rad = 0.25
 
     patch = mpatches.FancyArrowPatch(
         posA=(x1, y1), posB=(x2, y2),
@@ -225,14 +246,15 @@ for n1, n2 in corr_pairs_fig:
     )
     ax.add_patch(patch)
 
-    # Etiqueta r en punto medio del arco
-    mx = (x1 + x2) / 2 - (y2 - y1) * rad * 0.5
-    my = (y1 + y2) / 2 + (x2 - x1) * rad * 0.5
+    # Multiplicador drásticamente reducido a 0.15 para forzar la cercanía
+    mx = (x1 + x2) / 2 - (y2 - y1) * rad * 0.05
+    my = (y1 + y2) / 2 + (x2 - x1) * rad * 0.05
     sig_r = ("***" if p < 0.001 else "**" if p < 0.01 else "*" if p < 0.05 else "")
+    
     ax.text(mx, my, f"r={r:.2f}{sig_r}",
-            ha="center", va="center", fontsize=8.5,
+            ha="center", va="center", fontsize=13, 
             color=c_edge, fontweight="bold",
-            bbox=dict(facecolor="white", edgecolor="none", alpha=0.75, pad=1.0),
+            bbox=dict(facecolor="white", edgecolor="none", alpha=0.85, pad=0.8),
             zorder=4)
 
 # ── Flechas estructurales del SEM
@@ -262,62 +284,87 @@ for n1, n2, beta, sig in PATHS_STRUCT:
             connectionstyle="arc3,rad=-0.08",
         ), zorder=5)
     stars = "*" if sig else ""
-    ax.text((xs+xe)/2 + 0.35, (ys+ye)/2,
+    # Mover la etiqueta al 70% del camino hacia el nodo destino
+    t = 0.70 
+    tx = xs + t * (xe - xs)
+    ty = ys + t * (ye - ys)
+    # Desplazamiento perpendicular para que la caja no corte la flecha
+    # Desplazamiento perpendicular mucho menor para que abrace la flecha
+    px = -uy * 0.10
+    py = ux * 0.10
+    
+    ax.text(tx + px, ty + py,
             f"β={beta:.2f}{stars}",
-            ha="left", va="center", fontsize=10,
+            ha="center", va="center", fontsize=14, 
             color=c_a, fontweight="bold" if sig else "normal",
-            bbox=dict(facecolor="white", alpha=0.8, edgecolor="none", pad=1.2),
+            bbox=dict(facecolor="white", alpha=0.9, edgecolor="none", pad=1.0),
             zorder=6)
 
-# ── Nodos con radios de ítems
+# ── Nodos con gráficos de anillo (Heatmap por constructo)
+import matplotlib.patches as mpatches
+import matplotlib.colors as mcolors
+
+vmin_c, vmax_c = 0.4, 0.8 # Rango esperado de las cargas factoriales
+
 for esc_name, (cx, cy) in NODES_P.items():
-    color  = COLORS_N[esc_name]
-    loads  = item_loadings_fig.get(esc_name, [])
-    labels = item_labels_fig.get(esc_name, [])
     alpha_ = alphas_fig.get(esc_name, np.nan)
-    n_it   = len(loads)
+    loadings = item_loadings_fig.get(esc_name, [])
+    n_items = len(loadings)
+    color_base = COLORS_N[esc_name]
 
-    # Ángulos para los radios — apuntando hacia el lado opuesto al flujo del SEM
-    is_left = esc_name in ["Stress (EA)", "Fatigue (FA)", "Equity (EQ)"]
-    if is_left:
-        angles_deg = np.linspace(105, 255, n_it)  # hemisferio izquierdo
-    else:
-        angles_deg = np.linspace(-75, 75, n_it)    # hemisferio derecho
+    # Crear degradado para este constructo específico
+    rgb = mcolors.to_rgb(color_base)
+    light_c = [c + (1-c)*0.85 for c in rgb]  # Muy claro (cargas bajas)
+    dark_c  = [c * 0.5 for c in rgb]         # Oscuro (cargas altas)
+    cmap_node = mcolors.LinearSegmentedColormap.from_list("node_cmap", [light_c, color_base, dark_c])
 
-    for ang_d, load, lbl in zip(angles_deg, loads, labels):
-        ang_r   = np.deg2rad(ang_d)
-        spoke_l = SMAX * load
-        xs_s    = cx + CR * np.cos(ang_r)
-        ys_s    = cy + CR * np.sin(ang_r)
-        xe_s    = cx + (CR + spoke_l) * np.cos(ang_r)
-        ye_s    = cy + (CR + spoke_l) * np.sin(ang_r)
+    # Dibujar el anillo dividido en N ítems
+    if n_items > 0:
+        angle_per_item = 360 / n_items
+        theta1 = 90
+        
+        for load in loadings:
+            theta2 = theta1 - angle_per_item
+            
+            # Normalizar la carga para obtener el tono en el degradado
+            norm_val = max(0, min(1, (load - vmin_c) / (vmax_c - vmin_c)))
+            c_wedge = cmap_node(norm_val)
+            
+            w = mpatches.Wedge((cx, cy), CR, theta2, theta1, width=CR*0.35,
+                               facecolor=c_wedge, edgecolor="white", lw=1.5, zorder=3)
+            ax.add_patch(w)
+            
+            # Poner el valor de la carga factorial
+            ang_mid = np.radians((theta1 + theta2) / 2)
+            r_mid = CR - (CR*0.35)/2
+            xt = cx + r_mid * np.cos(ang_mid)
+            yt = cy + r_mid * np.sin(ang_mid)
+            
+            # Si el color es muy oscuro o muy claro, contrastar el texto
+            color_txt = "white" if norm_val > 0.6 else "black"
+            
+            ax.text(xt, yt, f"{load:.2f}", ha="center", va="center", 
+                    fontsize=8.5, fontweight="bold", color=color_txt, zorder=4)
+            
+            theta1 = theta2
 
-        ax.plot([xs_s, xe_s], [ys_s, ye_s],
-                color=color, lw=4.5, alpha=0.72,
-                solid_capstyle="round", zorder=2)
-
-        xl = cx + (CR + spoke_l + 0.22) * np.cos(ang_r)
-        yl = cy + (CR + spoke_l + 0.22) * np.sin(ang_r)
-        ax.text(xl, yl, lbl, ha="center", va="center",
-                fontsize=8.5, color=color,
-                fontweight="bold", zorder=5)
-
-    # Círculo principal
-    circ = plt.Circle((cx, cy), CR,
-                       facecolor=color, edgecolor="white",
-                       linewidth=3.5, zorder=3, alpha=0.96)
+    # Hueco central blanco
+    circ = plt.Circle((cx, cy), CR * 0.65,
+                       facecolor="white", edgecolor="#AAAAAA",
+                       linewidth=1.2, zorder=4, alpha=1.0)
     ax.add_patch(circ)
 
-    # Nombre del constructo
+    # Nombre del constructo (Arriba)
     short = esc_name.split(" (")[0]
-    ax.text(cx, cy + 0.28, short,
-            ha="center", va="center", fontsize=13,
-            fontweight="bold", color="white", zorder=7)
-    # Alpha
-    ax.text(cx, cy - 0.28,
-            f"α = {alpha_:.3f}" if not np.isnan(alpha_) else "",
-            ha="center", va="center", fontsize=10.5,
-            color="white", zorder=7)
+    ax.text(cx, cy + CR + 0.35, short,
+            ha="center", va="bottom", fontsize=18, 
+            fontweight="bold", color="black", zorder=7)
+    
+    # Alpha (Centro)
+    ax.text(cx, cy,
+            f"α = {alpha_:.2f}" if not np.isnan(alpha_) else "",
+            ha="center", va="center", fontsize=15, 
+            fontweight="bold", color="#555555", zorder=7)
 
 # ── Variables exógenas
 EXOG_PATHS_FIG = {
@@ -328,8 +375,9 @@ EXOG_PATHS_FIG = {
     "Sleep":      [("Fatigue (FA)", -0.005, False)],
 }
 for exog, (ex, ey) in EXOG_P.items():
+    # Aumento tamaño de fuente en las cajas de variables exógenas a 14
     ax.text(ex, ey, exog,
-            ha="center", va="center", fontsize=11,
+            ha="center", va="center", fontsize=14,
             fontweight="bold", color="white", zorder=5,
             bbox=dict(boxstyle="round,pad=0.45", facecolor="#6B7280",
                       edgecolor="white", linewidth=1.5, alpha=0.92))
@@ -337,12 +385,29 @@ for exog, (ex, ey) in EXOG_P.items():
         tx, ty = NODES_P[target]
         c_ex = "#1A1A2E" if sig else "#AAAAAA"
         lw_ex = 2.0 if sig else 0.9
-        ax.annotate("", xy=(tx - CR * 1.1, ty), xytext=(ex + 0.6, ey),
+        
+        # Dibujar flecha
+        xs_e, ys_e = ex + 0.6, ey
+        xe_e, ye_e = tx - CR * 1.1, ty
+        ax.annotate("", xy=(xe_e, ye_e), xytext=(xs_e, ys_e),
             arrowprops=dict(
                 arrowstyle="-|>,head_width=0.3,head_length=0.2",
                 color=c_ex, lw=lw_ex,
                 connectionstyle="arc3,rad=0.04",
             ), zorder=4)
+        
+        # Agregar el texto de Beta justo sobre la flecha
+        tm = 0.55 # Colocar el texto a la mitad del camino
+        tx_b = xs_e + tm * (xe_e - xs_e)
+        ty_b = ys_e + tm * (ye_e - ys_e)
+        stars_e = "*" if sig else ""
+        
+        # Hemos quitado el +0.35 en 'ty_b' y añadido un offset ligero de 0.15
+        ax.text(tx_b, ty_b + 0.15, f"β={beta:.2f}{stars_e}",
+                ha="center", va="center", fontsize=13, 
+                color=c_ex, fontweight="bold" if sig else "normal",
+                bbox=dict(facecolor="white", alpha=0.9, edgecolor="none", pad=1.0),
+                zorder=6)
 
 # ── Covarianza EA ↔ FA
 x_ea, y_ea = NODES_P["Stress (EA)"]
@@ -354,16 +419,6 @@ ax.annotate("",
                     connectionstyle="arc3,rad=-0.45"), zorder=4)
 ax.text(x_ea - CR*1.5, (y_ea + y_fa)/2, "cov",
         fontsize=9, color="#6B7280", ha="center")
-
-# ── Escala de radios (leyenda visual)
-ax.text(20.8, 14.3, "Item loading scale:", fontsize=10,
-        color="#555555", ha="left", fontweight="bold")
-for val, lbl in [(0.40, "0.40"), (0.60, "0.60"), (0.80, "0.80")]:
-    yy = 13.7 - val * 1.8
-    ax.plot([20.8, 20.8 + SMAX * val], [yy, yy],
-            color="#555555", lw=4.5, solid_capstyle="round")
-    ax.text(20.8 + SMAX * val + 0.15, yy, lbl,
-            fontsize=9, va="center", color="#555555")
 
 # ── Leyenda principal
 leg_elems = [
@@ -383,12 +438,12 @@ ax.legend(handles=leg_elems, loc="lower left",
 
 ax.set_title(
     "Figure 1.  Integrated Psychometric–Structural Portrait\n"
-    "Item loadings (spokes), inter-construct correlations (arcs) and SEM path coefficients",
-    fontsize=18, fontweight="bold", pad=16
+    "Item loadings (heatmaps), inter-construct correlations (arcs) and SEM path coefficients",
+    fontsize=18, fontweight="bold", pad=25 # Aumenté un poco el pad para dar espacio a los títulos de los anillos
 )
-ax.text(0.5, -0.025,
+fig.text(0.5, -0.025,
         f"{NOTA_MUESTRA_EN}  "
-        "Spoke length ∝ corrected item-total correlation (loading proxy).  "
+        "Donut charts display item-total correlations (loading proxy) colored by construct-specific gradients.  "
         "Arc width ∝ |r|;  red = positive, blue = negative.  "
         f"α = Cronbach's Alpha inside node.  {NOTA_SIG_EN}",
         transform=ax.transAxes, ha="center", fontsize=9.5,
