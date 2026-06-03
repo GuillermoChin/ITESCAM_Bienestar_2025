@@ -230,13 +230,13 @@ for n1, n2 in corr_pairs_fig:
     alpha_e = 0.15 + abs(r) * 0.65
     lw_e    = 0.8 + abs(r) * 5.5
     
-    # Ajuste de radios específico para evitar que choquen con los nodos
+    # Ajuste de radios: Curvaturas más sutiles para que el gráfico luzca más limpio
     if n1 == "Stress (EA)" and n2 == "Fatigue (FA)":
-        rad = -0.35
+        rad = -0.25  
     elif n1 == "Stress (EA)" and n2 == "Equity (EQ)":
-        rad = 0.45 # Curva amplia hacia la derecha para rodear a Fatigue (soluciona el 16***)
+        rad = 0.35 
     else:
-        rad = 0.25
+        rad = 0.15  
 
     patch = mpatches.FancyArrowPatch(
         posA=(x1, y1), posB=(x2, y2),
@@ -246,15 +246,16 @@ for n1, n2 in corr_pairs_fig:
     )
     ax.add_patch(patch)
 
-    # Multiplicador drásticamente reducido a 0.15 para forzar la cercanía
-    mx = (x1 + x2) / 2 - (y2 - y1) * rad * 0.05
-    my = (y1 + y2) / 2 + (x2 - x1) * rad * 0.05
+    # Multiplicador empírico drástico (0.15) para obligar a la etiqueta a abrazar la curva
+    factor = -0.65
+    mx = (x1 + x2) / 2 - (y2 - y1) * rad * factor
+    my = (y1 + y2) / 2 + (x2 - x1) * rad * factor
     sig_r = ("***" if p < 0.001 else "**" if p < 0.01 else "*" if p < 0.05 else "")
     
     ax.text(mx, my, f"r={r:.2f}{sig_r}",
             ha="center", va="center", fontsize=13, 
             color=c_edge, fontweight="bold",
-            bbox=dict(facecolor="white", edgecolor="none", alpha=0.85, pad=0.8),
+            bbox=dict(facecolor="white", edgecolor="none", alpha=0.85, pad=0.3),
             zorder=4)
 
 # ── Flechas estructurales del SEM
